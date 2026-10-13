@@ -1,0 +1,29 @@
+{
+  "name": "my-skills",
+  "version": "1.0.0",
+  "description": "Repositório central de Skills para Gemini (Antigravity) e Claude Code",
+  "main": "cli.py",
+  "bin": {
+    "skills": "./bin/skills"
+  },
+  "scripts": {
+    "skills": "./bin/skills",
+    "install-global": "./bin/skills install",
+    "sync": "./bin/skills sync",
+    "update-expo": "./bin/skills update-expo",
+    "list": "./bin/skills list",
+    "status": "./bin/skills status",
+    "setup": "./bin/skills setup"
+  },
+  "keywords": [
+    "antigravity",
+    "gemini",
+    "claude",
+    "claude-code",
+    "skills",
+    "expo",
+    "agentic-ai"
+  ],
+  "author": "João",
+  "license": "MIT"
+}

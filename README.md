@@ -181,12 +181,7 @@ Para publicar suas skills no seu próprio repositório GitHub:
 2. **Execute os comandos no terminal:**
 
 ```bash
-# Se ainda não inicializou o git:
-git add .
-git commit -m "feat: initial commit with skills catalog and management CLI"
-
-# Conecte o repositório remoto:
-git remote add origin https://github.com/SEU-USUARIO/my-skills.git
+git remote add origin https://github.com/joaop-rosa/myskills.git
 git branch -M main
 git push -u origin main
 ```

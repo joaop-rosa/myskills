@@ -167,17 +167,17 @@ skills/<nome-da-skill>/
 - **`wordpress-update`**: Procedimento seguro para atualização e manutenção de sites WordPress.
 
 ### ✍️ Produtividade e Workflow
+- **`skills-manager`**: Meta-skill para gerenciamento, criação padronizada, instalação e sincronização de skills.
 - **`git-commit`**: Criação de mensagens convencionais de commit com verificação de staging.
 - **`humanizer`**: Humanização de textos com IA, eliminando clichês e tons robóticos.
 - **`lingui-translate`**: Extração e tradução de mensagens multilíngues com Lingui.js.
 
 ---
 
-## 🐙 Como Conectar e Subir para o GitHub
+## 🐙 Repositório GitHub
 
-Para publicar suas skills no seu próprio repositório GitHub:
+O repositório oficial está configurado em: [https://github.com/joaop-rosa/myskills.git](https://github.com/joaop-rosa/myskills.git)
 
-1. **Crie um repositório vazio no GitHub** (ex: `https://github.com/SEU-USUARIO/my-skills.git`).
 2. **Execute os comandos no terminal:**
 
 ```bash

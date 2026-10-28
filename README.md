@@ -168,6 +168,7 @@ skills/<nome-da-skill>/
 
 ### ✍️ Produtividade e Workflow
 - **`skills-manager`**: Meta-skill para gerenciamento, criação padronizada, instalação e sincronização de skills.
+- **`skill-curator`**: Curadoria contínua e atualização automática de regras nas skills durante o chat com sync no Git.
 - **`git-commit`**: Criação de mensagens convencionais de commit com verificação de staging.
 - **`humanizer`**: Humanização de textos com IA, eliminando clichês e tons robóticos.
 - **`lingui-translate`**: Extração e tradução de mensagens multilíngues com Lingui.js.

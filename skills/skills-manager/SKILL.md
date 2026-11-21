@@ -4,23 +4,24 @@ description: >-
   Gerencia, cria, edita, instala e sincroniza skills no repositório myskills e atualiza o upstream oficial da Expo. Ative quando o usuário pedir para 'criar uma nova skill', 'adicionar skill', 'atualizar skills do expo', 'instalar skills no projeto', 'sincronizar skills', 'listar skills' ou gerenciar o repositório de skills.
 ---
 
-# Skills Manager — Gerenciador do Repositório de Skills
+# Skills Manager — Gerenciador do Repositório de Skills e MCPs
 
-Este runbook orienta os agentes (Google Gemini/Antigravity e Anthropic Claude Code) na manutenção, criação, sincronização e instalação de skills no ecossistema centralizado do repositório `myskills`.
+Este runbook orienta os agentes (Google Gemini/Antigravity e Anthropic Claude Code) na manutenção, criação, sincronização e instalação de **skills** e **servidores MCP** no ecossistema centralizado do repositório `myskills` (Linux e macOS).
 
 ---
 
 ## 1. Contexto do Ambiente
 
-- **Repositório Central:** `/home/joaop/myskills`
+- **Repositório Central:** `/home/joaop/myskills` (ou `~/myskills`)
 - **Repositório Remoto GitHub:** `https://github.com/joaop-rosa/myskills.git`
-- **CLI Centralizada:** `skills` (localizada em `/home/joaop/myskills/bin/skills` ou disponível globalmente no PATH)
-- **Diretórios Globais de Agentes:**
-  - **Gemini (Antigravity):** `~/.gemini/config/skills/<skill-name>/`
-  - **Claude (Claude Code):** `~/.claude/skills/<skill-name>/`
-- **Diretórios de Projeto (Workspaces Locais):**
-  - **Gemini:** `<projeto>/.agents/skills/<skill-name>/`
-  - **Claude:** `<projeto>/.claude/skills/<skill-name>/`
+- **CLI Centralizada:** `skills` (localizada em `~/myskills/bin/skills` ou disponível globalmente no PATH)
+- **Catálogo Portátil de MCPs:** `~/myskills/mcps/servers.json` (sobrescritas locais opcionais em `mcps/local.override.json`, ignorado pelo Git)
+- **Diretórios e Arquivos Globais de Agentes:**
+  - **Gemini (Antigravity):** `~/.gemini/config/skills/<skill-name>/` e `~/.gemini/config/mcp_config.json`
+  - **Claude (Claude Code):** `~/.claude/skills/<skill-name>/` e `~/.claude.json` (`mcpServers`)
+- **Escopo de Projeto (Workspaces Locais):**
+  - **Gemini:** `<projeto>/.agents/skills/<skill-name>/` e `<projeto>/.agents/mcp_config.json`
+  - **Claude:** `<projeto>/.claude/skills/<skill-name>/` e `<projeto>/.mcp.json`
 
 ---
 
@@ -30,15 +31,21 @@ Sempre prefira utilizar o comando `skills` em vez de criar ou mover pastas manua
 
 | Comando | Finalidade | Quando Usar |
 | :--- | :--- | :--- |
-| `skills list` (ou `ls`) | Lista todas as skills, categorias e status nos agentes | Para inspecionar as skills existentes antes de criar novas |
-| `skills status` | Exibe diagnóstico de saúde dos diretórios e links | Para verificar se há symlinks quebrados ou pastas não rastreadas |
+| `skills list` (ou `ls`) | Lista skills e servidores MCP e seus status nos agentes | Para inspecionar o catálogo existente antes de criar novos itens |
+| `skills status` | Exibe diagnóstico de skills, MCPs, browser local e upstream | Para verificar symlinks quebrados, runtime de Chrome ou pastas não rastreadas |
 | `skills add <nome>` | Cria o scaffold padronizado de uma nova skill | Sempre ao iniciar a criação de uma nova skill |
-| `skills sync` | Sincronização bidirecional entre repo e diretórios globais | Após criar ou alterar qualquer skill para garantir links ativos |
+| `skills sync` | Sincroniza skills e MCPs bidirecionalmente entre repo e agentes | Após criar ou alterar skills/MCPs (use `--no-mcp` para pular MCPs) |
 | `skills sync --expo` | Sincroniza local e busca atualizações do upstream da Expo | Para sincronização completa incluindo a Expo |
 | `skills pull` | Executa `git pull --ff-only` no repo e roda `skills sync` | Para trazer atualizações remotas (ex: bot do GitHub Actions) para a máquina local |
 | `skills update-expo` | Clona e atualiza as skills do upstream `expo/skills` em `skills/expo/` | Quando o usuário solicitar atualização manual das skills do Expo |
 | `skills install` | Instala globalmente todas as skills via symlinks | Para restaurar ou vincular todo o catálogo na máquina |
 | `skills install --project <dir>` | Instala as skills na pasta de um projeto específico | Quando o usuário pedir para instalar skills em um projeto |
+| `skills mcp list` | Lista servidores MCP do catálogo e status em Gemini/Claude | Para verificar quais servidores MCP estão ativos |
+| `skills mcp sync` | Importa MCPs locais sanitizados e aplica nos agentes | Para sincronizar apenas MCPs (com auto-detecção de Chrome Linux/macOS) |
+| `skills mcp install` | Instala todos ou determinados MCPs globalmente ou em `--project` | Para configurar MCPs em um projeto específico (`.mcp.json` / `.agents/mcp_config.json`) |
+| `skills mcp add <nome>` | Adiciona um novo servidor portátil em `mcps/servers.json` | Ao cadastrar novos MCPs com `--command`/`--args` ou `--url` |
+| `skills mcp remove <nome>` | Remove um servidor MCP dos agentes e do catálogo | Use `--keep-repo` para remover apenas dos agentes locais |
+| `skills mcp status` | Mostra SO detectado, binário de browser e contagem por agente | Para depurar resolução de Chromium no Linux ou macOS |
 
 ---
 
@@ -141,6 +148,28 @@ Se o usuário estiver trabalhando em um projeto (ex: `/home/joaop/meu-app`) e pe
 2. **Se o usuário desejar apenas skills pontuais:**
    ```bash
    skills install expo-router expo-native-ui coding-standards --project /caminho/do/projeto
+   ```
+
+---
+
+### 🔌 Fluxo 4: Adicionar e Sincronizar um Servidor MCP (Linux & macOS)
+1. **Registrar o servidor de forma agnóstica de SO:**
+   ```bash
+   skills mcp add meu-mcp --command npx --args -y pacote-mcp@latest
+   ```
+   *(Nunca grave caminhos locais de `/home/...` ou `/Users/...` em `mcps/servers.json`.)*
+2. **Sincronizar para os agentes da máquina:**
+   ```bash
+   skills mcp sync
+   ```
+   - No **macOS**, o comando detecta `/Applications/Google Chrome.app` (ou faz fallback para `~/Library/Caches/ms-playwright`) e evita injetar flags desnecessárias ou `LD_LIBRARY_PATH`.
+   - No **Linux**, se não houver Chrome global no `PATH`, detecta automaticamente o Chromium em `~/.cache/ms-playwright` e `LD_LIBRARY_PATH` em `~/.local/lib/playwright-deps`, injetando `--executable-path` (`playwright`) e `--executablePath` (`chrome-devtools`).
+   - Faz *merge* não-destrutivo em `~/.gemini/config/mcp_config.json` e `~/.claude.json`.
+3. **Versionar no Git:**
+   ```bash
+   git add mcps/servers.json
+   git commit -m "feat(mcp): add meu-mcp server"
+   git push origin main
    ```
 
 ---

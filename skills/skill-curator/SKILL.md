@@ -17,6 +17,7 @@ Você é responsável por evitar que as skills fiquem defasadas e por transforma
 - **Índice / Catálogo:** `~/myskills/README.md` (seção `## 📚 Catálogo Atual de Skills`)
 - **Pasta das Skills Customizadas:** `~/myskills/skills/<nome-da-skill>/`
 - **Pasta das Skills Expo/EAS (Upstream):** `~/myskills/skills/expo/<nome-da-skill>/`
+- **Catálogo Portátil de MCPs:** `~/myskills/mcps/servers.json` (sincronizado com Gemini e Claude via `~/myskills/bin/skills mcp sync`)
 
 > [!IMPORTANT]
 > Você normalmente estará executando dentro do workspace de outro projeto (ex: um app React, Expo, WordPress). Por isso, **sempre** execute comandos Git e da CLI apontando explicitamente para `~/myskills` (usando `git -C ~/myskills ...` e `~/myskills/bin/skills ...`), sem alterar nem commitar nada no repositório do projeto em que estiver trabalhando.

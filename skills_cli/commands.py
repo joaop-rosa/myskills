@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import re
+import sys
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 
@@ -22,10 +23,18 @@ from skills_cli.installer import (
     install_skill_to_dir,
     prune_broken_repo_symlinks,
 )
+from skills_cli.mcp_commands import (
+    print_mcp_catalog_table,
+    print_mcp_status_section,
+    sync_global_mcps,
+)
 from skills_cli.models import (
     BIN_DIR,
     CLAUDE_GLOBAL_DIR,
+    CLAUDE_MCP_GLOBAL_FILE,
     GEMINI_GLOBAL_DIR,
+    GEMINI_MCP_GLOBAL_FILE,
+    MCPS_FILE,
     REPO_ROOT,
     RESERVED_GROUP_NAMES,
     SKILLS_DIR,
@@ -139,6 +148,9 @@ def cmd_sync(args: argparse.Namespace, git_client: GitClient | None = None) -> i
     agent: AgentTarget = getattr(args, "agent", "all")
     global_targets = get_target_directories("global", agent, None, GEMINI_GLOBAL_DIR, CLAUDE_GLOBAL_DIR)
     _sync_global_targets(global_targets)
+    repo_mcps_file = REPO_ROOT / "mcps" / "servers.json"
+    if repo_mcps_file.is_file() and not getattr(args, "no_mcp", False):
+        sync_global_mcps(agent=agent, mcps_file=repo_mcps_file)
     _report_repo_git_status(client)
     return 0
 
@@ -250,6 +262,8 @@ def cmd_list(args: argparse.Namespace) -> int:
     for category, entries in grouped.items():
         _print_category_table(category, entries)
     print(f"Total: {Colors.BOLD}{len(skill_entries)} skills disponíveis.{Colors.RESET}\n")
+    if MCPS_FILE.is_file():
+        print_mcp_catalog_table(MCPS_FILE, GEMINI_MCP_GLOBAL_FILE, CLAUDE_MCP_GLOBAL_FILE)
     return 0
 
 
@@ -294,6 +308,7 @@ def cmd_status(args: argparse.Namespace) -> int:
     print(f"📚 Total de Skills no Repositório: {Colors.BOLD}{len(skill_entries)}{Colors.RESET} ({breakdown})\n")
     _print_global_health("Gemini (Antigravity)", GEMINI_GLOBAL_DIR)
     _print_global_health("Claude (Claude Code)", CLAUDE_GLOBAL_DIR)
+    print_mcp_status_section(MCPS_FILE, GEMINI_MCP_GLOBAL_FILE, CLAUDE_MCP_GLOBAL_FILE)
     _print_expo_source_status()
     return 0
 
@@ -352,19 +367,18 @@ def _ensure_local_bin_symlink(bin_script: Path) -> None:
     log_success(f"Link criado em: {symlink_target} -> {bin_script}")
 
 
-def _ensure_bash_aliases(bin_script: Path) -> None:
-    bash_aliases = Path.home() / ".bash_aliases"
+def _ensure_shell_rc_entry(rc_path: Path, bin_script: Path) -> None:
     resolved_bin = str(bin_script.resolve())
-    if bash_aliases.exists() and resolved_bin in bash_aliases.read_text(encoding="utf-8"):
-        log_info(f"Alias já configurado em {bash_aliases}")
+    if rc_path.exists() and resolved_bin in rc_path.read_text(encoding="utf-8"):
+        log_info(f"Alias já configurado em {rc_path}")
         return
-    with open(bash_aliases, "a", encoding="utf-8") as alias_file:
-        alias_file.write(f'\n# Skills CLI\nexport PATH="$HOME/.local/bin:$PATH"\nalias skills="{resolved_bin}"\n')
-    log_success(f"Alias e PATH adicionados em {bash_aliases}")
+    with open(rc_path, "a", encoding="utf-8") as rc_file:
+        rc_file.write(f'\n# Skills CLI\nexport PATH="$HOME/.local/bin:$PATH"\nalias skills="{resolved_bin}"\n')
+    log_success(f"Alias e PATH adicionados em {rc_path}")
 
 
 def cmd_setup(args: argparse.Namespace) -> int:
-    """Configura o atalho global `skills` em `~/.local/bin` e `~/.bash_aliases`.
+    """Configura o atalho global `skills` em `~/.local/bin` e arquivos de shell (Bash/Zsh).
 
     Exemplo:
         >>> cmd_setup(build_parser().parse_args(["setup"]))
@@ -372,7 +386,11 @@ def cmd_setup(args: argparse.Namespace) -> int:
     log_title("Configuração do Atalho Global 'skills'")
     bin_script = BIN_DIR / "skills"
     _ensure_local_bin_symlink(bin_script)
-    _ensure_bash_aliases(bin_script)
+    _ensure_shell_rc_entry(Path.home() / ".bash_aliases", bin_script)
+    zshrc_path = Path.home() / ".zshrc"
+    if sys.platform == "darwin" or zshrc_path.exists():
+        _ensure_shell_rc_entry(zshrc_path, bin_script)
+    rc_reload = "~/.zshrc" if sys.platform == "darwin" else "~/.bashrc"
     print(f"\n{Colors.GREEN}{Colors.BOLD}✓ Configuração concluída!{Colors.RESET}")
-    print(f"Execute {Colors.CYAN}source ~/.bashrc{Colors.RESET} ou abra um novo terminal e digite {Colors.CYAN}skills --help{Colors.RESET}\n")
+    print(f"Execute {Colors.CYAN}source {rc_reload}{Colors.RESET} ou abra um novo terminal e digite {Colors.CYAN}skills --help{Colors.RESET}\n")
     return 0

@@ -8,11 +8,16 @@ from typing import Literal
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SKILLS_DIR = REPO_ROOT / "skills"
+MCPS_DIR = REPO_ROOT / "mcps"
+MCPS_FILE = MCPS_DIR / "servers.json"
+MCPS_OVERRIDE_FILE = MCPS_DIR / "local.override.json"
 SOURCES_FILE = REPO_ROOT / "sources.json"
 BIN_DIR = REPO_ROOT / "bin"
 
 GEMINI_GLOBAL_DIR = Path.home() / ".gemini" / "config" / "skills"
 CLAUDE_GLOBAL_DIR = Path.home() / ".claude" / "skills"
+GEMINI_MCP_GLOBAL_FILE = Path.home() / ".gemini" / "config" / "mcp_config.json"
+CLAUDE_MCP_GLOBAL_FILE = Path.home() / ".claude.json"
 
 RESERVED_GROUP_NAMES: frozenset[str] = frozenset({"expo"})
 
@@ -100,3 +105,32 @@ class ExpoSyncSummary:
             True
         """
         return bool(self.added or self.updated or self.removed)
+
+
+@dataclass(frozen=True)
+class McpServerDefinition:
+    """Definição canônica e portátil de um servidor MCP."""
+
+    name: str
+    command: str = ""
+    args: tuple[str, ...] = ()
+    env: tuple[tuple[str, str], ...] = ()
+    url: str | None = None
+
+
+@dataclass(frozen=True)
+class McpTargetFile:
+    """Arquivo de configuração MCP alvo para um agente."""
+
+    agent: str
+    path: Path
+
+
+@dataclass(frozen=True)
+class BrowserRuntimeEnv:
+    """Ambiente de execução de navegador detectado no sistema operacional atual."""
+
+    platform_name: str
+    mode: str
+    executable_path: str | None
+    ld_library_path: str | None

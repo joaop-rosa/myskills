@@ -1,55 +1,51 @@
 ---
 name: playwright-test
-description: Runbook e procedimentos para teste E2E do Praetor CRM utilizando Playwright e o servidor Playwright MCP.
+description: >-
+  Runbook agnóstico para testes E2E, automação de navegador, inspeção visual e diagnóstico de performance/rede coordenando os servidores Playwright MCP e Chrome DevTools MCP. Ative ao testar fluxos de interface no navegador, auditar console/network, investigar bugs visuais ou medir performance web.
 ---
 
-# Guia de Testes E2E com Playwright & MCP — Praetor CRM
+# Testes E2E e Diagnóstico Web com Browser MCP
 
-Use este skill ao realizar testes de ponta a ponta (E2E), testes de interface e validações de fluxo na aplicação Praetor CRM.
-
----
-
-## 1. Contexto do Ambiente Local
-
-- **URL Base:** `http://localhost:3000`
-- **Credenciais de Teste (Admin):**
-  - Usuário: `admin`
-  - Senha: `senha123`
-- **Cookies & Sessão:** Autenticação via cookie HTTP-only `token` gerado em `/api/auth/login`.
+Diretrizes universais para automação de navegador e debugging em qualquer aplicação web utilizando os servidores **Playwright MCP** (`playwright`) e **Chrome DevTools MCP** (`chrome-devtools`).
 
 ---
 
-## 2. Fluxos Principais de Teste
+## 1. Roteamento entre Servidores MCP (Regra da Instância Única)
 
-### 2.1 Autenticação (`/login`)
-1. Navegue para `http://localhost:3000/login`.
-2. Preencha o input `#username` com `admin` e `#password` com `senha123`.
-3. Clique no botão de submissão do formulário.
-4. Verifique o redirecionamento automático para `/leads` ou `/dashboard`.
+Os dois servidores iniciam e controlam **instâncias separadas de navegador**. Nunca misture ferramentas de `playwright` e `chrome-devtools` dentro do mesmo fluxo de navegação (isso abre duas janelas distintas e perde cookies, sessão autenticada e estado de página).
 
-### 2.2 Gestão de Leads (`/leads`)
-1. Navegue para `http://localhost:3000/leads`.
-2. Verifique se as colunas do Kanban carregam (`Novo`, `Primeiro Contato`, `Reunião Agendada`, `Contrato Ganho`, etc.).
-3. Clique em um card para abrir o `LeadDetailsSheet`.
-4. Teste a alteração de status condicional:
-   - `MEETING_SCHEDULED`: requer data e hora da reunião.
-   - `WON`: exibe campos de honorários, parcelas e vencimento.
-   - `LOST`: exibe motivos rápidos de perda.
+| Cenário da Tarefa | Servidor MCP Recomendado | Exemplos de Uso |
+| :--- | :--- | :--- |
+| **Testes E2E e Fluxos Funcionais** | **`playwright`** (`@playwright/mcp`) | Login, preenchimento de formulários, CRUD, fluxos multi-aba e isolamento de sessão (`isolatedContext`) |
+| **Auditoria Técnica, Rede e Performance** | **`chrome-devtools`** (`chrome-devtools-mcp`) | Tracing de Core Web Vitals, `lighthouse_audit`, inspeção de CSS computado, heapsnapshot e debugging de rede/CORS |
 
-### 2.3 Módulo Financeiro (`/financial`)
-1. Navegue para `http://localhost:3000/financial`.
-2. Verifique o carregamento dos KPI cards superiores (Receitas, Despesas, Saldo Líquido).
-3. Teste a navegação pelas abas:
-   - **Recebíveis:** Tabela e cards expansíveis, botão de novo contrato.
-   - **Custos:** Tabela de custos fixos/variáveis, botão de custos em atraso anterior.
-   - **Inadimplência:** Visão agregada por cliente/contrato com alerta de contratos encerrados.
-4. Teste o acionamento dos modais:
-   - Modal de pagamento (`PaymentModal`): opções FIFO e histórico.
-   - Modal de custos anteriores (`PriorOverdueExpensesModal`).
+- Escolha **um único servidor** para a tarefa atual.
+- Se precisar rodar uma auditoria no `chrome-devtools` após um teste E2E no `playwright`, finalize e feche o fluxo anterior antes de iniciar a nova sessão.
 
 ---
 
-## 3. Boas Práticas durante a Execução
-- Capture screenshots após passos críticos para validação visual.
-- Verifique o console do navegador em busca de erros 500 ou runtime uncaught exceptions.
-- Limpe dados criados durante os testes quando aplicável ou utilize identificadores com prefixo `[TESTE]`.
+## 2. Regras Estritas e Economia de Contexto
+
+1. **Inspecione a Accessibility Tree antes de agir:**
+   - Sempre execute `browser_snapshot` (Playwright) ou `take_snapshot` (Chrome DevTools) após navegar ou alterar o estado da tela para obter referências exatas (`target` / `uid`).
+   - Nunca chute seletores CSS frágeis ou cegos quando o snapshot já fornece a referência estrutural do elemento.
+2. **Snapshots estruturais acima de screenshots repetidos:**
+   - Use snapshots de texto/acessibilidade como fonte primária de leitura e validação de DOM.
+   - Reserve screenshots (`scale: "css"` no Playwright) apenas para conferir alinhamento visual, layout responsivo ou evidência final, evitando estourar tokens de imagem no contexto.
+3. **Preenchimento em lote:**
+   - Ao preencher múltiplos campos de um formulário, prefira `browser_fill_form` (Playwright) ou `fill_form` (Chrome DevTools) em vez de chamadas sequenciais campo a campo.
+
+---
+
+## 3. Checklist Universal de Validação E2E e Diagnóstico
+
+1. **Pré-voo (Pre-flight):**
+   - Antes de abrir o navegador, garanta que a URL alvo (ex: servidor de desenvolvimento local) está respondendo e acessível.
+2. **Telemetria Pós-Ação Obrigatória:**
+   - Após submeter formulários, trocar rotas ou disparar ações críticas, verifique sempre:
+     - **Console do navegador** (`browser_console_messages` / `list_console_messages`): zero exceções uncaught ou erros de hidratação/runtime.
+     - **Requisições de rede** (`browser_network_requests` / `list_network_requests`): ausência de respostas HTTP 4xx/5xx inesperadas, timeouts ou falhas de CORS.
+3. **Isolamento de Sessões e Permissões:**
+   - Para testar fluxos com múltiplos perfis ou usuários simultâneos no Playwright MCP, crie abas com `isolatedContext` em `browser_tabs` para evitar contaminação de cookies e `localStorage`.
+4. **Higiene de Dados de Teste:**
+   - Utilize prefixos identificáveis (ex: `[TESTE]`) para registros criados durante a verificação e remova ou reverta dados temporários ao concluir o fluxo sempre que aplicável.

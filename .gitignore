@@ -24,3 +24,7 @@ Thumbs.db
 # Diretórios de agentes locais em caso de teste no repo
 .agents/
 .claude/
+
+# Overrides locais e arquivos MCP por projeto
+mcps/local.override.json
+.mcp.json

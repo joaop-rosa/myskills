@@ -1,15 +1,15 @@
-# 🧠 My Skills — Repositório Central de Agent Skills
+# 🧠 My Skills — Repositório Central de Agent Skills & MCPs
 
-Repositório central para armazenamento, versionamento e distribuição de **AI Agent Skills** compatível tanto com o **Google Gemini (Antigravity IDE / CLI)** quanto com o **Anthropic Claude (Claude Code)**.
+Repositório central para armazenamento, versionamento e distribuição de **AI Agent Skills** e **Servidores MCP** compatível com **Google Gemini (Antigravity IDE / CLI)** e **Anthropic Claude (Claude Code)** em **Linux e macOS**.
 
-Inclui uma CLI (`skills`) integrada para instalar com um clique, sincronizar alterações bidirecionalmente e manter as skills do ecossistema **Expo / EAS** sempre atualizadas com o repositório upstream oficial ([expo/skills](https://github.com/expo/skills)).
+Inclui uma CLI (`skills`) integrada para instalar com um clique, sincronizar skills e configurações MCP bidirecionalmente (com detecção automática de navegador por sistema operacional) e manter as skills do ecossistema **Expo / EAS** sempre atualizadas com o repositório upstream oficial ([expo/skills](https://github.com/expo/skills)).
 
 ---
 
 ## ⚡ Início Rápido
 
 ### 1. Habilitar o comando `skills` globalmente
-Dentro desta pasta, execute o comando de setup para tornar o comando acessível de qualquer lugar do seu terminal:
+Dentro desta pasta, execute o comando de setup para tornar o comando acessível de qualquer lugar do seu terminal (configura `~/.local/bin/skills`, `~/.bash_aliases` no Linux e `~/.zshrc` no macOS):
 
 ```bash
 ./bin/skills setup
@@ -17,7 +17,11 @@ Dentro desta pasta, execute o comando de setup para tornar o comando acessível 
 
 Em seguida, recarregue seu terminal ou execute:
 ```bash
+# Linux (bash)
 source ~/.bashrc
+
+# macOS (zsh)
+source ~/.zshrc
 ```
 
 Pronto! Agora você pode rodar `skills` em qualquer diretório.
@@ -55,19 +59,50 @@ skills install --dry-run
 
 ### 🔄 Sincronização Inteligente (`sync` e `pull`)
 
-O comando `sync` executa uma sincronização inteligente:
-1. **Importa novidades locais:** Se você criou ou editou uma skill diretamente em `~/.gemini/config/skills` ou `~/.claude/skills`, o comando detecta e importa a pasta para este repositório Git!
-2. **Garante integridade:** Remove symlinks quebrados do repositório e re-vincula todas as skills (incluindo skills movidas para subpastas como `skills/expo/`).
+O comando `sync` executa uma sincronização inteligente de **skills e servidores MCP**:
+1. **Importa novidades locais:** Detecta novas skills em `~/.gemini/config/skills` ou `~/.claude/skills` e novos MCPs em `~/.gemini/config/mcp_config.json` ou `~/.claude.json` (sanitizando caminhos locais antes de salvar em `mcps/servers.json`).
+2. **Garante integridade:** Remove symlinks quebrados do repositório, re-vincula todas as skills e aplica todos os servidores MCP do catálogo adaptados ao sistema operacional atual (Linux ou macOS).
 3. **Status do Git:** Exibe se há alterações pendentes prontas para commit.
 
 ```bash
 skills sync
 
+# Sincronizar apenas skills, pulando os servidores MCP:
+skills sync --no-mcp
+
 # Sincronizar tudo E também atualizar as skills do Expo em uma única etapa:
 skills sync --expo
 
-# Puxar alterações remotas da branch main (git pull --ff-only) e sincronizar os links locais:
+# Puxar alterações remotas da branch main (git pull --ff-only) e sincronizar skills + MCPs locais:
 skills pull
+```
+
+---
+
+### 🔌 Gerenciamento de Servidores MCP (`mcp`)
+
+O catálogo portátil em `mcps/servers.json` mantém definições limpas de servidores MCP (como `playwright` e `chrome-devtools`) sem acoplar caminhos específicos de máquina no Git:
+
+- **No macOS:** Detecta `/Applications/Google Chrome.app` nativamente sem injetar flags extras nem `LD_LIBRARY_PATH` (ou faz fallback para `~/Library/Caches/ms-playwright`).
+- **No Linux:** Quando não há Chrome global no `PATH`, localiza automaticamente o binário mais recente em `~/.cache/ms-playwright` e as libs em `~/.local/lib/playwright-deps`, aplicando `--executable-path` (`@playwright/mcp`), `--executablePath` (`chrome-devtools-mcp`) e `LD_LIBRARY_PATH`.
+- **Merge não-destrutivo:** Atualiza apenas a chave `mcpServers` em `~/.gemini/config/mcp_config.json` e `~/.claude.json`, preservando histórico, projetos e credenciais já salvos. Variáveis específicas de uma máquina podem ser adicionadas em `mcps/local.override.json` (ignorado pelo Git).
+
+```bash
+# Listar MCPs do catálogo e status em Gemini/Claude
+skills mcp list
+
+# Sincronizar MCPs bidirecionalmente entre catálogo e agentes
+skills mcp sync
+
+# Verificar runtime de navegador detectado e MCPs ativos
+skills mcp status
+
+# Instalar MCPs no escopo de um projeto (.agents/mcp_config.json e .mcp.json)
+skills mcp install --project /caminho/do/meu-projeto
+
+# Cadastrar ou remover um servidor MCP no catálogo
+skills mcp add meu-mcp --command npx --args -y pacote-mcp@latest
+skills mcp remove meu-mcp
 ```
 
 ---
@@ -180,7 +215,7 @@ skills/
 - **`code-review`**: Runbook completo para revisões de código rigorosas e relatórios de melhoria.
 - **`coding-standards`**: Padrões rígidos de Clean Code, SOLID e consistência arquitetural.
 - **`react-vite-architecture`**: Diretrizes de Clean Architecture e separação de camadas para React + Vite.
-- **`playwright-test`**: Testes ponta a ponta (E2E), automação de interface e MCP com Playwright.
+- **`playwright-test`**: Runbook agnóstico para testes E2E, automação e diagnóstico web coordenando Playwright MCP e Chrome DevTools MCP.
 - **`wordpress-update`**: Procedimento seguro para atualização e manutenção de sites WordPress.
 
 ### ✍️ Produtividade e Workflow

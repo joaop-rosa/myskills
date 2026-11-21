@@ -35,7 +35,8 @@ Sempre prefira utilizar o comando `skills` em vez de criar ou mover pastas manua
 | `skills add <nome>` | Cria o scaffold padronizado de uma nova skill | Sempre ao iniciar a criação de uma nova skill |
 | `skills sync` | Sincronização bidirecional entre repo e diretórios globais | Após criar ou alterar qualquer skill para garantir links ativos |
 | `skills sync --expo` | Sincroniza local e busca atualizações do upstream da Expo | Para sincronização completa incluindo a Expo |
-| `skills update-expo` | Clona e atualiza as skills do upstream `expo/skills` | Quando o usuário solicitar atualização das skills do Expo |
+| `skills pull` | Executa `git pull --ff-only` no repo e roda `skills sync` | Para trazer atualizações remotas (ex: bot do GitHub Actions) para a máquina local |
+| `skills update-expo` | Clona e atualiza as skills do upstream `expo/skills` em `skills/expo/` | Quando o usuário solicitar atualização manual das skills do Expo |
 | `skills install` | Instala globalmente todas as skills via symlinks | Para restaurar ou vincular todo o catálogo na máquina |
 | `skills install --project <dir>` | Instala as skills na pasta de um projeto específico | Quando o usuário pedir para instalar skills em um projeto |
 
@@ -107,15 +108,19 @@ Exemplos práticos, templates ou convenções recomendadas.
 ---
 
 ### 🌐 Fluxo 2: Atualizar as Skills da Expo (Upstream)
+> [!NOTE]
+> O workflow `.github/workflows/sync-expo-skills.yml` já sincroniza automaticamente as skills da Expo em `skills/expo/` todo dia às 06:00 BRT e envia para a `main`. Para atualizar apenas sua máquina local, execute `skills pull`.
+
+Para rodar uma sincronização manual contra o upstream:
 1. **Executar a atualização:**
    ```bash
    skills update-expo
    ```
 2. **Inspecionar as alterações:**
-   Execute `git status -s` e `git diff` para revisar as novidades que vieram do repositório oficial da Expo.
+   Execute `git status -s` e `git diff` para revisar as novidades em `skills/expo/` que vieram do repositório oficial da Expo.
 3. **Commitar e Subir:**
    ```bash
-   git add skills/ sources.json
+   git add skills/expo/ sources.json
    git commit -m "chore(expo): sync upstream skills from expo/skills"
    git push origin main
    ```
@@ -142,7 +147,7 @@ Se o usuário estiver trabalhando em um projeto (ex: `/home/joaop/meu-app`) e pe
 
 ## 5. Regras Críticas para o Agente
 
-1. **Nunca crie pastas soltas fora de `skills/`**: Toda skill deve residir em uma subpasta direta de `/home/joaop/myskills/skills/<nome>/` contendo seu respectivo `SKILL.md`.
+1. **Respeite a separação entre customizadas e Expo**: Skills customizadas ficam em `/home/joaop/myskills/skills/<nome>/`, enquanto as skills oficiais da Expo ficam exclusivamente em `/home/joaop/myskills/skills/expo/<nome>/` (nunca crie pastas soltas fora de `skills/`).
 2. **Sempre rode `skills sync` após criar ou renomear skills**: Sem isso, os diretórios globais do Gemini e Claude não receberão o link simbólico atualizado.
 3. **Mantenha a compatibilidade dupla (Gemini + Claude)**: Nunca utilize sintaxes ou estruturas exclusivas de uma única ferramenta que quebrem a leitura pelo outro agente.
 4. **Preserve os commits limpos**: Sempre utilize Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`).

@@ -2,6 +2,7 @@
   "expo": {
     "repo": "https://github.com/expo/skills.git",
     "branch": "main",
+    "target_dir": "skills/expo",
     "scan_dirs": [
       "plugins/expo/skills",
       "plugins/expo-experiments/skills"

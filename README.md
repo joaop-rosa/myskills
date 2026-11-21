@@ -53,11 +53,11 @@ skills install --dry-run
 
 ---
 
-### 🔄 Sincronização Inteligente (`sync`)
+### 🔄 Sincronização Inteligente (`sync` e `pull`)
 
 O comando `sync` executa uma sincronização inteligente:
 1. **Importa novidades locais:** Se você criou ou editou uma skill diretamente em `~/.gemini/config/skills` ou `~/.claude/skills`, o comando detecta e importa a pasta para este repositório Git!
-2. **Garante integridade:** Assegura que todas as skills do repositório estejam ativas e apontadas corretamente.
+2. **Garante integridade:** Remove symlinks quebrados do repositório e re-vincula todas as skills (incluindo skills movidas para subpastas como `skills/expo/`).
 3. **Status do Git:** Exibe se há alterações pendentes prontas para commit.
 
 ```bash
@@ -65,13 +65,16 @@ skills sync
 
 # Sincronizar tudo E também atualizar as skills do Expo em uma única etapa:
 skills sync --expo
+
+# Puxar alterações remotas da branch main (git pull --ff-only) e sincronizar os links locais:
+skills pull
 ```
 
 ---
 
 ### 🌐 Atualizar Skills do Expo Upstream (`update-expo`)
 
-As skills do Expo vêm do repositório oficial da equipe da Expo ([https://github.com/expo/skills](https://github.com/expo/skills)). Para buscar as versões mais recentes:
+As skills do Expo vêm do repositório oficial da equipe da Expo ([https://github.com/expo/skills](https://github.com/expo/skills)) e ficam organizadas em `skills/expo/`. Para buscar as versões mais recentes manualmente:
 
 ```bash
 skills update-expo
@@ -80,9 +83,20 @@ skills update-expo
 O comando:
 - Clona superficialmente a branch `main` do repositório oficial.
 - Varre os plugins (`plugins/expo/skills` e `plugins/expo-experiments/skills`).
-- Compara com os arquivos locais e atualiza apenas o que mudou.
-- Notifica quais skills foram adicionadas, atualizadas ou permaneceram idênticas.
-- Registra a data e o hash do commit sincronizado em `sources.json`.
+- Compara com os arquivos em `skills/expo/`, atualiza apenas o que mudou e remove skills descontinuadas no upstream.
+- Notifica quais skills foram adicionadas, atualizadas, removidas ou permaneceram idênticas.
+- Atualiza `sources.json` apenas quando houver alteração real de conteúdo.
+
+---
+
+### 🤖 Sincronização Automática via GitHub Actions
+
+O workflow [`.github/workflows/sync-expo-skills.yml`](.github/workflows/sync-expo-skills.yml) executa automaticamente todos os dias às **06:00 BRT** (`09:00 UTC`), além de poder ser disparado sob demanda pela aba **Actions** (`workflow_dispatch`):
+1. Roda `python3 cli.py update-expo` no repositório.
+2. Quando houver novas skills, atualizações ou remoções em `skills/expo/`, cria um commit (`chore(expo): sync upstream skills (<sha>)`) e envia direto para `main`.
+3. Se nada mudou no upstream, encerra sem gerar commit vazio.
+
+Na sua máquina local, basta rodar `skills pull` para baixar as novidades e atualizar os symlinks do Gemini e do Claude.
 
 ---
 
@@ -119,12 +133,15 @@ Tanto o **Google Antigravity** quanto o **Claude Code** adotam o padrão de dire
 | **Google Gemini (Antigravity)** | `~/.gemini/config/skills/<skill-name>/` | `<projeto>/.agents/skills/<skill-name>/` |
 | **Anthropic Claude (Claude Code)** | `~/.claude/skills/<skill-name>/` | `<projeto>/.claude/skills/<skill-name>/` |
 
-### Estrutura de uma Skill
+### Organização do Repositório e Estrutura de uma Skill
 ```text
-skills/<nome-da-skill>/
-├── SKILL.md            # Obrigatório: Metadados YAML + Instruções do modelo
-├── references/         # Opcional: Documentações pesadas ou guias extras
-└── scripts/            # Opcional: Scripts auxiliares executáveis
+skills/
+├── expo/<expo-skill>/      # Skills oficiais sincronizadas do upstream (expo/skills)
+│   └── SKILL.md
+└── <custom-skill>/         # Suas skills customizadas e workflows
+    ├── SKILL.md            # Obrigatório: Metadados YAML + Instruções do modelo
+    ├── references/         # Opcional: Documentações pesadas ou guias extras
+    └── scripts/            # Opcional: Scripts auxiliares executáveis
 ```
 
 ---

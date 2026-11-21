@@ -15,7 +15,8 @@ Você é responsável por evitar que as skills fiquem defasadas e por transforma
 - **Repositório Central (Git):** `~/myskills` (funciona em macOS e Linux)
 - **CLI de Gerenciamento:** `~/myskills/bin/skills`
 - **Índice / Catálogo:** `~/myskills/README.md` (seção `## 📚 Catálogo Atual de Skills`)
-- **Pasta das Skills:** `~/myskills/skills/<nome-da-skill>/`
+- **Pasta das Skills Customizadas:** `~/myskills/skills/<nome-da-skill>/`
+- **Pasta das Skills Expo/EAS (Upstream):** `~/myskills/skills/expo/<nome-da-skill>/`
 
 > [!IMPORTANT]
 > Você normalmente estará executando dentro do workspace de outro projeto (ex: um app React, Expo, WordPress). Por isso, **sempre** execute comandos Git e da CLI apontando explicitamente para `~/myskills` (usando `git -C ~/myskills ...` e `~/myskills/bin/skills ...`), sem alterar nem commitar nada no repositório do projeto em que estiver trabalhando.
@@ -48,7 +49,7 @@ git -C ~/myskills pull --rebase origin main
    - Ex: Arquitetura React + Vite, Zustand, TanStack Router, CSS Modules, useApi, modais, Lingui → `react-vite-architecture`
    - Ex: Critérios de revisão de código → `code-review`
    - Ex: E2E e Playwright → `playwright-test`
-2. **Atenção às skills da Expo (`expo-*` e `eas-*`):** Elas são sincronizadas de um repositório upstream oficial e são sobrescritas ao rodar `skills update-expo`. Nunca edite uma skill `expo-*` ou `eas-*` a menos que o usuário peça explicitamente; prefira colocar suas convenções próprias em `coding-standards` ou criar uma nova skill customizada.
+2. **Atenção às skills da Expo (`skills/expo/<nome>/`, prefixos `expo-*` e `eas-*`):** Elas são sincronizadas do repositório upstream oficial e são sobrescritas ao rodar `skills update-expo` (ou pelo bot diário do GitHub Actions). Nunca edite uma skill dentro de `skills/expo/` a menos que o usuário peça explicitamente; prefira colocar suas convenções próprias em `coding-standards` ou criar uma nova skill customizada.
 3. Se for necessário criar uma skill nova, use `~/myskills/bin/skills add <nome-da-skill>`.
 
 ### Passo 3: Inspecionar a skill e seus `references/`

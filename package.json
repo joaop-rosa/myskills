@@ -10,10 +10,12 @@
     "skills": "./bin/skills",
     "install-global": "./bin/skills install",
     "sync": "./bin/skills sync",
+    "pull": "./bin/skills pull",
     "update-expo": "./bin/skills update-expo",
     "list": "./bin/skills list",
     "status": "./bin/skills status",
-    "setup": "./bin/skills setup"
+    "setup": "./bin/skills setup",
+    "test": "python3 -m unittest discover -s tests -v"
   },
   "keywords": [
     "antigravity",

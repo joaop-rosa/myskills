@@ -16,6 +16,7 @@ from skills_cli.commands import (
     cmd_status,
     cmd_sync,
     cmd_update_expo,
+    cmd_update_upstream,
 )
 from skills_cli.console import log_error
 from skills_cli.mcp_commands import (
@@ -43,6 +44,7 @@ def _add_install_parser(subparsers: argparse._SubParsersAction[argparse.Argument
 def _add_sync_and_remote_parsers(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     p_sync = subparsers.add_parser("sync", help="Sincroniza skills e MCPs com os destinos globais")
     p_sync.add_argument("-e", "--expo", action="store_true", help="Também atualiza as skills do upstream oficial da Expo")
+    p_sync.add_argument("-u", "--upstream", action="store_true", help="Também atualiza todas as fontes upstream configuradas em sources.json")
     p_sync.add_argument("-a", "--agent", choices=["all", "gemini", "claude"], default="all", help="Agente alvo (padrão: all)")
     p_sync.add_argument("--no-mcp", action="store_true", help="Pula a sincronização automática de servidores MCP")
     p_sync.set_defaults(func=cmd_sync)
@@ -54,6 +56,11 @@ def _add_sync_and_remote_parsers(subparsers: argparse._SubParsersAction[argparse
     p_expo = subparsers.add_parser("update-expo", help="Atualiza skills do repositório oficial da Expo (github.com/expo/skills)")
     p_expo.add_argument("--summary-json", default=None, help="Salva resumo estruturado em JSON no caminho indicado")
     p_expo.set_defaults(func=cmd_update_expo)
+
+    p_upstream = subparsers.add_parser("update-upstream", aliases=["update-sources"], help="Atualiza fontes upstream configuradas em sources.json")
+    p_upstream.add_argument("sources", nargs="*", help="Nomes específicos das fontes (ex: expo vercel); omitido = todas")
+    p_upstream.add_argument("--summary-json", default=None, help="Salva resumo estruturado multi-fonte em JSON")
+    p_upstream.set_defaults(func=cmd_update_upstream)
 
 
 def _add_catalog_parsers(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:

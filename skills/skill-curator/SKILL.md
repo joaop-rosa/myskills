@@ -17,6 +17,7 @@ Você é responsável por evitar que as skills fiquem defasadas e por transforma
 - **Índice / Catálogo:** `~/myskills/README.md` (seção `## 📚 Catálogo Atual de Skills`)
 - **Pasta das Skills Customizadas:** `~/myskills/skills/<nome-da-skill>/`
 - **Pasta das Skills Expo/EAS (Upstream):** `~/myskills/skills/expo/<nome-da-skill>/`
+- **Pasta das Skills Vercel Labs (Upstream):** `~/myskills/skills/vercel/<nome-da-skill>/`
 - **Catálogo Portátil de MCPs:** `~/myskills/mcps/servers.json` (sincronizado com Gemini e Claude via `~/myskills/bin/skills mcp sync`)
 
 > [!IMPORTANT]
@@ -50,7 +51,7 @@ git -C ~/myskills pull --rebase origin main
    - Ex: Arquitetura React + Vite, Zustand, TanStack Router, CSS Modules, useApi, modais, Lingui → `react-vite-architecture`
    - Ex: Critérios de revisão de código → `code-review`
    - Ex: E2E e Playwright → `playwright-test`
-2. **Atenção às skills da Expo (`skills/expo/<nome>/`, prefixos `expo-*` e `eas-*`):** Elas são sincronizadas do repositório upstream oficial e são sobrescritas ao rodar `skills update-expo` (ou pelo bot diário do GitHub Actions). Nunca edite uma skill dentro de `skills/expo/` a menos que o usuário peça explicitamente; prefira colocar suas convenções próprias em `coding-standards` ou criar uma nova skill customizada.
+2. **Atenção às skills upstream (`skills/expo/<nome>/` e `skills/vercel/<nome>/`):** Elas são sincronizadas de repositórios upstream oficiais e são sobrescritas ao rodar `skills update-upstream` / `skills update-expo` (ou pelo bot diário do GitHub Actions). Nunca edite uma skill dentro de `skills/expo/` ou `skills/vercel/` a menos que o usuário peça explicitamente; prefira colocar suas convenções próprias em `coding-standards` ou criar uma nova skill customizada.
 3. Se for necessário criar uma skill nova, use `~/myskills/bin/skills add <nome-da-skill>`.
 
 ### Passo 3: Inspecionar a skill e seus `references/`

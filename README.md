@@ -70,7 +70,10 @@ skills sync
 # Sincronizar apenas skills, pulando os servidores MCP:
 skills sync --no-mcp
 
-# Sincronizar tudo E também atualizar as skills do Expo em uma única etapa:
+# Sincronizar tudo E também atualizar todas as fontes upstream (Expo + Vercel):
+skills sync --upstream
+
+# Sincronizar tudo E também atualizar apenas o upstream da Expo:
 skills sync --expo
 
 # Puxar alterações remotas da branch main (git pull --ff-only) e sincronizar skills + MCPs locais:
@@ -107,28 +110,34 @@ skills mcp remove meu-mcp
 
 ---
 
-### 🌐 Atualizar Skills do Expo Upstream (`update-expo`)
+### 🌐 Atualizar Skills de Fontes Upstream (`update-upstream` / `update-expo`)
 
-As skills do Expo vêm do repositório oficial da equipe da Expo ([https://github.com/expo/skills](https://github.com/expo/skills)) e ficam organizadas em `skills/expo/`. Para buscar as versões mais recentes manualmente:
+As skills de repositórios externos configurados em `sources.json` (como **Expo** em `skills/expo/` e **Vercel Labs** em `skills/vercel/`) são sincronizadas de forma idempotente:
 
 ```bash
+# Atualiza todas as fontes upstream configuradas em sources.json (Expo + Vercel)
+skills update-upstream
+
+# Atualiza apenas uma fonte específica
+skills update-upstream vercel
+
+# Atalho legado para atualizar apenas as skills da Expo
 skills update-expo
 ```
 
 O comando:
-- Clona superficialmente a branch `main` do repositório oficial.
-- Varre os plugins (`plugins/expo/skills` e `plugins/expo-experiments/skills`).
-- Compara com os arquivos em `skills/expo/`, atualiza apenas o que mudou e remove skills descontinuadas no upstream.
-- Notifica quais skills foram adicionadas, atualizadas, removidas ou permaneceram idênticas.
+- Clona superficialmente a branch configurada de cada repositório upstream.
+- Varre os diretórios configurados em `scan_dirs` e aplica filtros `include` (quando definidos, como `vercel-react-best-practices`).
+- Compara com os arquivos locais, atualiza apenas o que mudou e remove skills descontinuadas no upstream.
 - Atualiza `sources.json` apenas quando houver alteração real de conteúdo.
 
 ---
 
 ### 🤖 Sincronização Automática via GitHub Actions
 
-O workflow [`.github/workflows/sync-expo-skills.yml`](.github/workflows/sync-expo-skills.yml) executa automaticamente todos os dias às **06:00 BRT** (`09:00 UTC`), além de poder ser disparado sob demanda pela aba **Actions** (`workflow_dispatch`):
-1. Roda `python3 cli.py update-expo` no repositório.
-2. Quando houver novas skills, atualizações ou remoções em `skills/expo/`, cria um commit (`chore(expo): sync upstream skills (<sha>)`) e envia direto para `main`.
+O workflow [`.github/workflows/sync-upstream-skills.yml`](.github/workflows/sync-upstream-skills.yml) executa automaticamente todos os dias às **06:00 BRT** (`09:00 UTC`), além de poder ser disparado sob demanda pela aba **Actions** (`workflow_dispatch`):
+1. Roda `python3 cli.py update-upstream` para sincronizar todas as fontes em `sources.json` (`expo`, `vercel`, etc.).
+2. Quando houver novas skills, atualizações ou remoções, cria um commit automático e envia direto para `main`.
 3. Se nada mudou no upstream, encerra sem gerar commit vazio.
 
 Na sua máquina local, basta rodar `skills pull` para baixar as novidades e atualizar os symlinks do Gemini e do Claude.
@@ -173,6 +182,8 @@ Tanto o **Google Antigravity** quanto o **Claude Code** adotam o padrão de dire
 skills/
 ├── expo/<expo-skill>/      # Skills oficiais sincronizadas do upstream (expo/skills)
 │   └── SKILL.md
+├── vercel/<vercel-skill>/  # Skills sincronizadas do upstream (vercel-labs/agent-skills)
+│   └── SKILL.md
 └── <custom-skill>/         # Suas skills customizadas e workflows
     ├── SKILL.md            # Obrigatório: Metadados YAML + Instruções do modelo
     ├── references/         # Opcional: Documentações pesadas ou guias extras
@@ -209,6 +220,9 @@ skills/
 - **`eas-update-insights`**: Monitoramento de integridade e rollouts de updates.
 - **`eas-simulator`**: Execução e controle de builds em simuladores remotos do EAS.
 - **`eas-observe`**: Observabilidade, telemetria e monitoramento de logs em produção.
+
+### ▲ Vercel Labs (Upstream Oficial)
+- **`vercel-react-best-practices`**: Guias de otimização de performance em React e Next.js mantidos pela engenharia da Vercel.
 
 ### 🛡️ Qualidade, Arquitetura e Engenharia
 - **`audit-vulnerabilities`**: Auditoria profunda de dependências, resolução de vulnerabilidades e patches.

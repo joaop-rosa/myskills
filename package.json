@@ -12,6 +12,7 @@
     "sync": "./bin/skills sync",
     "pull": "./bin/skills pull",
     "update-expo": "./bin/skills update-expo",
+    "update-upstream": "./bin/skills update-upstream",
     "list": "./bin/skills list",
     "status": "./bin/skills status",
     "setup": "./bin/skills setup",

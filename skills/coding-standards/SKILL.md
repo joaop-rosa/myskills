@@ -80,8 +80,10 @@ Deve ser seguido **sempre que for escrever, implementar ou refatorar código**, 
 - **Documente o "PORQUÊ", nunca o "O QUÊ"**:
   - Não adicione comentários redundantes ou óbvios (ex: `// incrementa contador` acima de `i++`).
   - Escreva o motivo técnico ou regra de negócio por trás da decisão: por que essa abordagem foi escolhida ou qual restrição ela atende.
-- **Docstrings em Funções Públicas**:
-  - Toda função pública ou de interface exposta DEVE conter docstring com:
+- **JSDoc e Docstrings em Funções Públicas**:
+  - **Condicionado ao padrão do projeto**: Em projetos existentes, verifique primeiro se o codebase já adota JSDoc/docstrings. **Só utilize JSDoc/docstrings se o padrão do projeto já os possuir**; caso o projeto não utilize, **não** os adicione.
+  - **Comportamento padrão**: Em projetos novos ou sem convenção pré-estabelecida, pode incluir JSDoc/docstrings por padrão em funções públicas ou de interface exposta.
+  - **Conteúdo esperado (quando aplicado)**:
     1. **Intenção** clara da função.
     2. **Um exemplo prático de uso**.
 - **Rastreabilidade de Bugs e Restrições**:

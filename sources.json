@@ -9,5 +9,18 @@
     ],
     "last_sync": "2026-11-25T18:54:13.572770+00:00",
     "last_commit": "c5e536273b6b4a7a3ad5dd9d74b6098c15138b21"
+  },
+  "vercel": {
+    "repo": "https://github.com/vercel-labs/agent-skills.git",
+    "branch": "main",
+    "target_dir": "skills/vercel",
+    "scan_dirs": [
+      "skills"
+    ],
+    "include": [
+      "vercel-react-best-practices"
+    ],
+    "last_sync": "2026-11-26T01:12:19.047182+00:00",
+    "last_commit": "5a37a6329fbad3666c3207392a6a7c0110e92efb"
   }
 }

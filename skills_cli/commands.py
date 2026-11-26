@@ -10,10 +10,11 @@ from pathlib import Path
 
 from skills_cli.console import Colors, log_error, log_info, log_success, log_title, log_warn
 from skills_cli.discovery import discover_repo_skills, find_skill_by_name
-from skills_cli.expo_sync import (
-    load_expo_source_config,
-    sync_expo_upstream,
-    write_sync_summary_json,
+from skills_cli.expo_sync import sync_expo_upstream, write_sync_summary_json
+from skills_cli.upstream_sync import (
+    load_all_upstream_configs,
+    sync_all_upstreams,
+    write_multi_sync_summary_json,
 )
 from skills_cli.git_client import GitClient, SubprocessGitClient
 from skills_cli.installer import (
@@ -132,6 +133,16 @@ def _report_repo_git_status(client: GitClient) -> None:
     log_success("Repositório Git está limpo e sincronizado.")
 
 
+def _run_sync_upstream_step(args: argparse.Namespace, client: GitClient) -> bool:
+    if getattr(args, "upstream", False):
+        print("🔄 Sincronizando todas as fontes upstream...")
+        return cmd_update_upstream(argparse.Namespace(sources=[], summary_json=None), git_client=client) == 0
+    if getattr(args, "expo", False):
+        print("🔄 Sincronizando com o upstream do Expo...")
+        return cmd_update_expo(args, git_client=client) == 0
+    return True
+
+
 def cmd_sync(args: argparse.Namespace, git_client: GitClient | None = None) -> int:
     """Sincroniza skills do repositório com os agentes, importando novas e reparando links.
 
@@ -140,11 +151,8 @@ def cmd_sync(args: argparse.Namespace, git_client: GitClient | None = None) -> i
     """
     log_title("Sincronização de Skills")
     client = git_client or SubprocessGitClient()
-    if getattr(args, "expo", False):
-        print("🔄 Sincronizando com o upstream do Expo...")
-        if cmd_update_expo(args, git_client=client) != 0:
-            return 1
-        print()
+    if not _run_sync_upstream_step(args, client):
+        return 1
     agent: AgentTarget = getattr(args, "agent", "all")
     global_targets = get_target_directories("global", agent, None, GEMINI_GLOBAL_DIR, CLAUDE_GLOBAL_DIR)
     _sync_global_targets(global_targets)
@@ -175,14 +183,14 @@ def cmd_pull(args: argparse.Namespace, git_client: GitClient | None = None) -> i
 
 def _log_sync_summary(summary: ExpoSyncSummary) -> None:
     print()
+    log_info(f"[{summary.source_name.upper()}] Commit upstream: {summary.short_sha} -> {summary.target_dir}")
     if summary.added:
         log_success(f"Novas skills adicionadas ({len(summary.added)}): {', '.join(summary.added)}")
     if summary.updated:
         log_success(f"Skills atualizadas ({len(summary.updated)}): {', '.join(summary.updated)}")
     if summary.removed:
         log_warn(f"Skills removidas do upstream ({len(summary.removed)}): {', '.join(summary.removed)}")
-    log_info(f"Skills sem alterações: {summary.unchanged_count}")
-    print(f"\n{Colors.GREEN}{Colors.BOLD}Atualização do Expo concluída ({summary.target_dir})!{Colors.RESET}\n")
+    log_info(f"Skills sem alterações: {summary.unchanged_count}\n")
 
 
 def cmd_update_expo(args: argparse.Namespace, git_client: GitClient | None = None) -> int:
@@ -198,12 +206,34 @@ def cmd_update_expo(args: argparse.Namespace, git_client: GitClient | None = Non
     except (RuntimeError, ValueError) as exc:
         log_error(str(exc))
         return 1
-    log_info(f"Commit upstream: {summary.short_sha}")
     summary_json_path = getattr(args, "summary_json", None)
     if summary_json_path:
         write_sync_summary_json(summary, Path(summary_json_path))
         log_info(f"Resumo JSON salvo em: {summary_json_path}")
     _log_sync_summary(summary)
+    return 0
+
+
+def cmd_update_upstream(args: argparse.Namespace, git_client: GitClient | None = None) -> int:
+    """Sincroniza todas ou determinadas fontes upstream configuradas em `sources.json`.
+
+    Exemplo:
+        >>> cmd_update_upstream(build_parser().parse_args(["update-upstream"]))
+    """
+    log_title("Atualização de Skills Upstream")
+    client = git_client or SubprocessGitClient()
+    source_names = getattr(args, "sources", ()) or ()
+    try:
+        summaries = sync_all_upstreams(REPO_ROOT, SOURCES_FILE, client, source_names)
+    except (RuntimeError, ValueError) as exc:
+        log_error(str(exc))
+        return 1
+    summary_json_path = getattr(args, "summary_json", None)
+    if summary_json_path:
+        write_multi_sync_summary_json(summaries, Path(summary_json_path))
+        log_info(f"Resumo JSON salvo em: {summary_json_path}")
+    for summary in summaries:
+        _log_sync_summary(summary)
     return 0
 
 
@@ -217,6 +247,8 @@ def _group_skills_by_category(skill_entries: Sequence[SkillEntry]) -> dict[str, 
 def _category_heading(category: str) -> str:
     if category == "expo":
         return "EXPO & EAS FRAMEWORK"
+    if category == "vercel":
+        return "VERCEL LABS"
     if category == "custom":
         return "SKILLS CUSTOMIZADAS & WORKFLOWS"
     return f"{category.upper()} SKILLS"
@@ -282,20 +314,22 @@ def _print_global_health(label: str, global_dir: Path) -> None:
     print()
 
 
-def _print_expo_source_status() -> None:
+def _print_upstream_sources_status() -> None:
     if not SOURCES_FILE.is_file():
         return
-    config = load_expo_source_config(SOURCES_FILE)
-    short_sha = config.last_commit[:8] if config.last_commit else "Desconhecido"
-    print(f"🌐 {Colors.BOLD}Upstream Expo{Colors.RESET}:")
-    print(f"   Repositório: {config.repo}")
-    print(f"   Destino local: {config.target_dir}")
-    print(f"   Última sincronização: {config.last_sync or 'Nunca'}")
-    print(f"   Último commit: {short_sha}\n")
+    for config in load_all_upstream_configs(SOURCES_FILE):
+        short_sha = config.last_commit[:8] if config.last_commit else "Desconhecido"
+        print(f"🌐 {Colors.BOLD}Upstream {config.source_name.title()}{Colors.RESET}:")
+        print(f"   Repositório: {config.repo}")
+        print(f"   Destino local: {config.target_dir}")
+        if config.include:
+            print(f"   Filtro include: {', '.join(config.include)}")
+        print(f"   Última sincronização: {config.last_sync or 'Nunca'}")
+        print(f"   Último commit: {short_sha}\n")
 
 
 def cmd_status(args: argparse.Namespace) -> int:
-    """Exibe diagnóstico de saúde do repositório, links globais e upstream da Expo.
+    """Exibe diagnóstico de saúde do repositório, links globais e fontes upstream.
 
     Exemplo:
         >>> cmd_status(build_parser().parse_args(["status"]))
@@ -309,7 +343,7 @@ def cmd_status(args: argparse.Namespace) -> int:
     _print_global_health("Gemini (Antigravity)", GEMINI_GLOBAL_DIR)
     _print_global_health("Claude (Claude Code)", CLAUDE_GLOBAL_DIR)
     print_mcp_status_section(MCPS_FILE, GEMINI_MCP_GLOBAL_FILE, CLAUDE_MCP_GLOBAL_FILE)
-    _print_expo_source_status()
+    _print_upstream_sources_status()
     return 0
 
 

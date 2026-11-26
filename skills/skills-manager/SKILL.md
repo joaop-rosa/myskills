@@ -35,9 +35,11 @@ Sempre prefira utilizar o comando `skills` em vez de criar ou mover pastas manua
 | `skills status` | Exibe diagnóstico de skills, MCPs, browser local e upstream | Para verificar symlinks quebrados, runtime de Chrome ou pastas não rastreadas |
 | `skills add <nome>` | Cria o scaffold padronizado de uma nova skill | Sempre ao iniciar a criação de uma nova skill |
 | `skills sync` | Sincroniza skills e MCPs bidirecionalmente entre repo e agentes | Após criar ou alterar skills/MCPs (use `--no-mcp` para pular MCPs) |
-| `skills sync --expo` | Sincroniza local e busca atualizações do upstream da Expo | Para sincronização completa incluindo a Expo |
+| `skills sync --upstream` | Sincroniza local e atualiza todas as fontes upstream (`sources.json`) | Para sincronização completa incluindo Expo e Vercel |
+| `skills sync --expo` | Sincroniza local e busca atualizações do upstream da Expo | Para sincronização local + apenas Expo |
 | `skills pull` | Executa `git pull --ff-only` no repo e roda `skills sync` | Para trazer atualizações remotas (ex: bot do GitHub Actions) para a máquina local |
-| `skills update-expo` | Clona e atualiza as skills do upstream `expo/skills` em `skills/expo/` | Quando o usuário solicitar atualização manual das skills do Expo |
+| `skills update-upstream` | Clona e atualiza todas as fontes configuradas em `sources.json` | Quando o usuário pedir atualização manual das fontes upstream (Expo, Vercel, etc.) |
+| `skills update-expo` | Clona e atualiza as skills do upstream `expo/skills` em `skills/expo/` | Quando o usuário solicitar atualização manual apenas das skills do Expo |
 | `skills install` | Instala globalmente todas as skills via symlinks | Para restaurar ou vincular todo o catálogo na máquina |
 | `skills install --project <dir>` | Instala as skills na pasta de um projeto específico | Quando o usuário pedir para instalar skills em um projeto |
 | `skills mcp list` | Lista servidores MCP do catálogo e status em Gemini/Claude | Para verificar quais servidores MCP estão ativos |
@@ -114,21 +116,21 @@ Exemplos práticos, templates ou convenções recomendadas.
 
 ---
 
-### 🌐 Fluxo 2: Atualizar as Skills da Expo (Upstream)
+### 🌐 Fluxo 2: Atualizar as Skills Upstream (`expo` e `vercel`)
 > [!NOTE]
-> O workflow `.github/workflows/sync-expo-skills.yml` já sincroniza automaticamente as skills da Expo em `skills/expo/` todo dia às 06:00 BRT e envia para a `main`. Para atualizar apenas sua máquina local, execute `skills pull`.
+> O workflow `.github/workflows/sync-upstream-skills.yml` já sincroniza automaticamente todas as fontes em `sources.json` (`skills/expo/` e `skills/vercel/`) todo dia às 06:00 BRT e envia para a `main`. Para atualizar apenas sua máquina local, execute `skills pull`.
 
 Para rodar uma sincronização manual contra o upstream:
 1. **Executar a atualização:**
    ```bash
-   skills update-expo
+   skills update-upstream
    ```
 2. **Inspecionar as alterações:**
-   Execute `git status -s` e `git diff` para revisar as novidades em `skills/expo/` que vieram do repositório oficial da Expo.
+   Execute `git status -s` e `git diff` para revisar as novidades em `skills/expo/` e `skills/vercel/`.
 3. **Commitar e Subir:**
    ```bash
-   git add skills/expo/ sources.json
-   git commit -m "chore(expo): sync upstream skills from expo/skills"
+   git add skills/expo/ skills/vercel/ sources.json
+   git commit -m "chore(upstream): sync upstream skills"
    git push origin main
    ```
 
@@ -176,7 +178,7 @@ Se o usuário estiver trabalhando em um projeto (ex: `/home/joaop/meu-app`) e pe
 
 ## 5. Regras Críticas para o Agente
 
-1. **Respeite a separação entre customizadas e Expo**: Skills customizadas ficam em `/home/joaop/myskills/skills/<nome>/`, enquanto as skills oficiais da Expo ficam exclusivamente em `/home/joaop/myskills/skills/expo/<nome>/` (nunca crie pastas soltas fora de `skills/`).
+1. **Respeite a separação entre customizadas e upstreams**: Skills customizadas ficam em `/home/joaop/myskills/skills/<nome>/`, enquanto as skills sincronizadas de fontes externas ficam exclusivamente em seus respectivos grupos (`skills/expo/<nome>/` e `skills/vercel/<nome>/`). Nunca crie pastas soltas fora de `skills/`.
 2. **Sempre rode `skills sync` após criar ou renomear skills**: Sem isso, os diretórios globais do Gemini e Claude não receberão o link simbólico atualizado.
 3. **Mantenha a compatibilidade dupla (Gemini + Claude)**: Nunca utilize sintaxes ou estruturas exclusivas de uma única ferramenta que quebrem a leitura pelo outro agente.
 4. **Preserve os commits limpos**: Sempre utilize Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`).

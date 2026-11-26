@@ -19,7 +19,7 @@ CLAUDE_GLOBAL_DIR = Path.home() / ".claude" / "skills"
 GEMINI_MCP_GLOBAL_FILE = Path.home() / ".gemini" / "config" / "mcp_config.json"
 CLAUDE_MCP_GLOBAL_FILE = Path.home() / ".claude.json"
 
-RESERVED_GROUP_NAMES: frozenset[str] = frozenset({"expo"})
+RESERVED_GROUP_NAMES: frozenset[str] = frozenset({"expo", "vercel"})
 
 Scope = Literal["global", "project"]
 AgentTarget = Literal["all", "gemini", "claude"]
@@ -64,8 +64,8 @@ class GlobalDirHealth:
 
 
 @dataclass(frozen=True)
-class ExpoSourceConfig:
-    """Configuração de sincronização com o repositório upstream da Expo."""
+class UpstreamSourceConfig:
+    """Configuração de sincronização com um repositório upstream de skills."""
 
     repo: str
     branch: str
@@ -73,11 +73,16 @@ class ExpoSourceConfig:
     target_dir: str
     last_sync: str | None
     last_commit: str | None
+    include: tuple[str, ...] = ()
+    source_name: str = "expo"
+
+
+ExpoSourceConfig = UpstreamSourceConfig
 
 
 @dataclass(frozen=True)
-class ExpoSyncSummary:
-    """Resultado consolidado de uma execução de sincronização com a Expo."""
+class UpstreamSyncSummary:
+    """Resultado consolidado de uma execução de sincronização upstream."""
 
     commit_sha: str
     target_dir: str
@@ -85,6 +90,7 @@ class ExpoSyncSummary:
     updated: tuple[str, ...]
     removed: tuple[str, ...]
     unchanged_count: int
+    source_name: str = "expo"
 
     @property
     def short_sha(self) -> str:
@@ -105,6 +111,9 @@ class ExpoSyncSummary:
             True
         """
         return bool(self.added or self.updated or self.removed)
+
+
+ExpoSyncSummary = UpstreamSyncSummary
 
 
 @dataclass(frozen=True)

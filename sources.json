@@ -7,8 +7,8 @@
       "plugins/expo/skills",
       "plugins/expo-experiments/skills"
     ],
-    "last_sync": "2026-11-26T18:48:58.688157+00:00",
-    "last_commit": "6d0506afe7df9334b60ad4b1ceb35969836f01a0"
+    "last_sync": "2026-11-27T18:40:45.628664+00:00",
+    "last_commit": "8f2b6c0c65533e695243aa401eaa1cb6f1fe86c2"
   },
   "vercel": {
     "repo": "https://github.com/vercel-labs/agent-skills.git",
